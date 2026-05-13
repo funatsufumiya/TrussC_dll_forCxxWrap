@@ -668,6 +668,12 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
         "Disabled", sol::var(BlendMode::Disabled)
     );
 
+    lua->new_usertype<TextureFilter>("TextureFilter",
+        sol::meta_function::equal_to, [](TextureFilter a, TextureFilter b){ return a == b; },
+        "Nearest", sol::var(TextureFilter::Nearest),
+        "Linear", sol::var(TextureFilter::Linear)
+    );
+
     sol::usertype<Shader> shader_type = lua->new_usertype<Shader>("Shader",
         sol::constructors<Shader()>() // FIXME: move constructor?
     );
