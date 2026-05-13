@@ -248,6 +248,40 @@ public:
         arc(Vec3{center.x, center.y, 0}, radiusX, radiusY, angleBegin, angleEnd, true, circleResolution);
     }
 
+    // -----------------------------------------------------------------------
+    // Circular arc — radians, tolerance-aware (uses current CurveStyle).
+    //
+    // Disambiguated from the elliptical overloads above by parameter count:
+    // these take a single `radius` instead of `radiusX, radiusY`. Angles
+    // are in **radians** (matches TrussC's overall convention; the older
+    // overloads take degrees for backward-compat reasons).
+    // -----------------------------------------------------------------------
+    void arc(const Vec3& center, float radius,
+             float angleBegin, float angleEnd, bool clockwise = true) {
+        if (radius <= 0.0f) return;
+        float diff = angleEnd - angleBegin;
+        if (!clockwise) diff = -diff;
+        if (diff == 0.0f) return;
+        int segments = getDefaultContext().decideArcSegments(radius, std::abs(diff));
+        for (int i = 0; i <= segments; i++) {
+            float t = (float)i / (float)segments;
+            float a = angleBegin + diff * t;
+            vertices_.push_back(Vec3{
+                center.x + std::cos(a) * radius,
+                center.y + std::sin(a) * radius,
+                center.z
+            });
+        }
+    }
+    void arc(float x, float y, float radius,
+             float angleBegin, float angleEnd, bool clockwise = true) {
+        arc(Vec3{x, y, 0}, radius, angleBegin, angleEnd, clockwise);
+    }
+    void arc(const Vec2& center, float radius,
+             float angleBegin, float angleEnd, bool clockwise = true) {
+        arc(Vec3{center.x, center.y, 0}, radius, angleBegin, angleEnd, clockwise);
+    }
+
     // Close/Open path
     void close() {
         closed_ = true;

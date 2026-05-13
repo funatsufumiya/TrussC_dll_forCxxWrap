@@ -494,6 +494,54 @@ public:
         drawEllipse(Vec3(cx, cy, 0), Vec2(rx, ry));
     }
 
+    // -----------------------------------------------------------------------
+    // Arc — circular arc spanning [angleBegin, angleEnd] radians.
+    //
+    // Stroke: just the arc curve.
+    // Fill:   pie sector — fan from center to arc, like p5.js / Processing.
+    //
+    // Angles in **radians**, going counter-clockwise (mathematical
+    // convention). For a quick semicircle: drawArc(x, y, r, 0, HALF_TAU).
+    // -----------------------------------------------------------------------
+    void drawArc(Vec3 center, float radius, float angleBegin, float angleEnd) {
+        if (radius <= 0.0f) return;
+        float span = angleEnd - angleBegin;
+        if (span == 0.0f) return;
+        int segments = decideArcSegments(radius, std::abs(span));
+        if (segments < 2) segments = 2;
+        float cx = center.x, cy = center.y, cz = center.z;
+        auto& writer = internal::getActiveWriter();
+
+        if (fillEnabled_) {
+            // TriangleStrip alternating center / rim — same fan pattern
+            // drawCircle uses, just over a partial angular range.
+            writer.begin(PrimitiveType::TriangleStrip);
+            writer.color(currentR_, currentG_, currentB_, currentA_);
+            for (int i = 0; i <= segments; i++) {
+                float a = angleBegin + span * ((float)i / (float)segments);
+                float px = cx + std::cos(a) * radius;
+                float py = cy + std::sin(a) * radius;
+                writer.vertex(cx, cy, cz);
+                writer.vertex(px, py, cz);
+            }
+            writer.end();
+        }
+        if (strokeEnabled_) {
+            writer.begin(PrimitiveType::LineStrip);
+            writer.color(currentR_, currentG_, currentB_, currentA_);
+            for (int i = 0; i <= segments; i++) {
+                float a = angleBegin + span * ((float)i / (float)segments);
+                writer.vertex(cx + std::cos(a) * radius,
+                              cy + std::sin(a) * radius, cz);
+            }
+            writer.end();
+        }
+    }
+
+    void drawArc(float x, float y, float radius, float angleBegin, float angleEnd) {
+        drawArc(Vec3(x, y, 0), radius, angleBegin, angleEnd);
+    }
+
     // Main implementation (Vec3)
     // NOTE: drawLine uses GL_LINES (1px fixed width, not affected by strokeWeight)
     //       For thick lines or shader support, use StrokeMesh instead

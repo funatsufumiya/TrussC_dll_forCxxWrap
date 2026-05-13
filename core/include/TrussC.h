@@ -1048,6 +1048,14 @@ inline void drawEllipse(float cx, float cy, float rx, float ry) {
     getDefaultContext().drawEllipse(cx, cy, rx, ry);
 }
 
+// Arc — see RenderContext::drawArc for semantics. Angles in radians.
+inline void drawArc(Vec3 center, float radius, float angleBegin, float angleEnd) {
+    getDefaultContext().drawArc(center, radius, angleBegin, angleEnd);
+}
+inline void drawArc(float x, float y, float radius, float angleBegin, float angleEnd) {
+    getDefaultContext().drawArc(x, y, radius, angleBegin, angleEnd);
+}
+
 // Line
 inline void drawLine(Vec3 p1, Vec3 p2) {
     getDefaultContext().drawLine(p1, p2);
