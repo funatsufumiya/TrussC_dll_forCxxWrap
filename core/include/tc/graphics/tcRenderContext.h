@@ -417,7 +417,8 @@ public:
 
     // Main implementation (Vec3)
     void drawCircle(Vec3 center, float radius) {
-        int segments = circleResolution_;
+        int segments = decideCircleSegments(radius);
+        if (segments == 0) return;
         float cx = center.x, cy = center.y, cz = center.z;
         auto& writer = internal::getActiveWriter();
 
@@ -452,7 +453,10 @@ public:
 
     // Main implementation (Vec3)
     void drawEllipse(Vec3 center, Vec2 radii) {
-        int segments = circleResolution_;
+        // Use the larger radius for the segment count — conservative
+        // approximation; matches what oF and most engines do for ellipses.
+        int segments = decideCircleSegments(std::max(radii.x, radii.y));
+        if (segments == 0) return;
         float cx = center.x, cy = center.y, cz = center.z;
         float rx = radii.x, ry = radii.y;
         auto& writer = internal::getActiveWriter();

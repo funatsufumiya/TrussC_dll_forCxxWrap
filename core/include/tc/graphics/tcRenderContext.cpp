@@ -22,7 +22,10 @@ void RenderContext::drawRectRounded(Vec3 pos, Vec2 size, float radius) {
     }
 
     auto& writer = internal::getActiveWriter();
-    int segs = std::max(2, circleResolution_ / 4);
+    // Each corner is a quarter arc — use the curve-style segment count
+    // for QUARTER_TAU at this radius. Floor at 2 so the corner is still
+    // visibly curved even at minimal tolerance / resolution.
+    int segs = std::max(2, decideArcSegments(radius, QUARTER_TAU));
     int halfSegs = segs / 2;
 
     // Pre-compute circular arc offsets for 1/8 circle (0 to 45 degrees only)
@@ -113,7 +116,10 @@ void RenderContext::drawRectSquircle(Vec3 pos, Vec2 size, float radius) {
     }
 
     auto& writer = internal::getActiveWriter();
-    int segs = std::max(2, circleResolution_ / 4);
+    // Squircle deviates from a circle by O(r), so segment count derived
+    // from the inscribed circle is a conservative-enough match for visual
+    // smoothness (the design doc accepts this approximation).
+    int segs = std::max(2, decideArcSegments(radius, QUARTER_TAU));
     int halfSegs = segs / 2;
 
     // Pre-compute squircle offsets for 1/8 circle (0 to 45 degrees only)
