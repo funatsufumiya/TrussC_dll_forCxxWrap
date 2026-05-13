@@ -542,6 +542,147 @@ public:
         drawArc(Vec3(x, y, 0), radius, angleBegin, angleEnd);
     }
 
+    // -----------------------------------------------------------------------
+    // Bezier and curve primitives — stroke only (open curves have no
+    // natural enclosed region; build a Path if you want a filled shape
+    // that includes a Bezier piece).
+    //
+    //   drawBezier(p0, p1, p2, p3)        — cubic
+    //   drawBezier(p0, p1, p2)            — quadratic
+    //   drawBezier(std::vector<Vec3>)     — n-th order (control polygon)
+    //   drawCurve (p0, p1, p2, p3)        — Catmull-Rom interpolating p1->p2,
+    //                                       using p0/p3 as tangent influences
+    //                                       (same semantics as oF's drawCurve)
+    //
+    // In Tolerance mode each curve is adaptively subdivided so the polyline
+    // stays within `tolerance` (in screen pixels) of the true curve. In
+    // Resolution mode the curve is sampled at N+1 uniform t-values.
+    // -----------------------------------------------------------------------
+private:
+    void emitPolylineStroke_(const std::vector<Vec3>& pts) {
+        if (pts.size() < 2) return;
+        auto& writer = internal::getActiveWriter();
+        writer.begin(PrimitiveType::LineStrip);
+        writer.color(currentR_, currentG_, currentB_, currentA_);
+        for (auto& p : pts) writer.vertex(p.x, p.y, p.z);
+        writer.end();
+    }
+
+    // Uniform-t cubic sampling for resolution mode.
+    static void sampleCubicUniform_(const Vec3& p0, const Vec3& p1,
+                                    const Vec3& p2, const Vec3& p3,
+                                    int n, std::vector<Vec3>& out) {
+        out.reserve(out.size() + n + 1);
+        for (int i = 0; i <= n; i++) {
+            float t = (float)i / (float)n;
+            float u = 1 - t;
+            float b0 = u*u*u, b1 = 3*u*u*t, b2 = 3*u*t*t, b3 = t*t*t;
+            out.push_back(Vec3{
+                b0*p0.x + b1*p1.x + b2*p2.x + b3*p3.x,
+                b0*p0.y + b1*p1.y + b2*p2.y + b3*p3.y,
+                b0*p0.z + b1*p1.z + b2*p2.z + b3*p3.z});
+        }
+    }
+    static void sampleQuadUniform_(const Vec3& p0, const Vec3& p1, const Vec3& p2,
+                                   int n, std::vector<Vec3>& out) {
+        out.reserve(out.size() + n + 1);
+        for (int i = 0; i <= n; i++) {
+            float t = (float)i / (float)n;
+            float u = 1 - t;
+            float b0 = u*u, b1 = 2*u*t, b2 = t*t;
+            out.push_back(Vec3{
+                b0*p0.x + b1*p1.x + b2*p2.x,
+                b0*p0.y + b1*p1.y + b2*p2.y,
+                b0*p0.z + b1*p1.z + b2*p2.z});
+        }
+    }
+public:
+
+    void drawBezier(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3) {
+        if (!strokeEnabled_) return;
+        std::vector<Vec3> pts;
+        if (style_.curve.mode == CurveStyle::Mode::Tolerance) {
+            tessellateCubicBezier(p0, p1, p2, p3,
+                                  style_.curve.tolerance / getCurrentScale(), pts);
+        } else {
+            sampleCubicUniform_(p0, p1, p2, p3,
+                                std::max(2, style_.curve.resolution), pts);
+        }
+        emitPolylineStroke_(pts);
+    }
+
+    void drawBezier(Vec3 p0, Vec3 p1, Vec3 p2) {
+        if (!strokeEnabled_) return;
+        std::vector<Vec3> pts;
+        if (style_.curve.mode == CurveStyle::Mode::Tolerance) {
+            tessellateQuadBezier(p0, p1, p2,
+                                 style_.curve.tolerance / getCurrentScale(), pts);
+        } else {
+            sampleQuadUniform_(p0, p1, p2,
+                               std::max(2, style_.curve.resolution), pts);
+        }
+        emitPolylineStroke_(pts);
+    }
+
+    void drawBezier(const std::vector<Vec3>& controlPoints) {
+        if (!strokeEnabled_ || controlPoints.size() < 2) return;
+        if (controlPoints.size() == 2) {
+            drawLine(controlPoints[0], controlPoints[1]);
+            return;
+        }
+        // Fast paths for the two common orders. Same numerical result as
+        // tessellateBezierN — just avoids the extra std::vector copy that
+        // path takes for its in-place de Casteljau scratch buffer.
+        if (controlPoints.size() == 3) {
+            drawBezier(controlPoints[0], controlPoints[1], controlPoints[2]);
+            return;
+        }
+        if (controlPoints.size() == 4) {
+            drawBezier(controlPoints[0], controlPoints[1],
+                       controlPoints[2], controlPoints[3]);
+            return;
+        }
+        std::vector<Vec3> pts;
+        if (style_.curve.mode == CurveStyle::Mode::Tolerance) {
+            tessellateBezierN(controlPoints,
+                              style_.curve.tolerance / getCurrentScale(), pts);
+        } else {
+            // Uniform t via repeated de Casteljau evaluation.
+            int n = std::max(2, style_.curve.resolution);
+            pts.reserve(n + 1);
+            for (int i = 0; i <= n; i++) {
+                float t = (float)i / (float)n;
+                std::vector<Vec3> work = controlPoints;
+                int sz = (int)work.size();
+                for (int level = 1; level < sz; level++) {
+                    for (int j = 0; j < sz - level; j++) {
+                        work[j] = Vec3{
+                            work[j].x + (work[j+1].x - work[j].x) * t,
+                            work[j].y + (work[j+1].y - work[j].y) * t,
+                            work[j].z + (work[j+1].z - work[j].z) * t};
+                    }
+                }
+                pts.push_back(work[0]);
+            }
+        }
+        emitPolylineStroke_(pts);
+    }
+
+    // Catmull-Rom interpolating p1 -> p2, using p0 and p3 as tangent
+    // influences. Matches openFrameworks' ofDrawCurve / curveVertex
+    // semantics. Internally converted to the equivalent cubic Bezier
+    // (B1 = p1 + (p2-p0)/6, B2 = p2 - (p3-p1)/6) so it inherits the
+    // same adaptive subdivision and mode handling as drawBezier.
+    void drawCurve(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3) {
+        Vec3 b1{p1.x + (p2.x - p0.x) / 6.0f,
+                p1.y + (p2.y - p0.y) / 6.0f,
+                p1.z + (p2.z - p0.z) / 6.0f};
+        Vec3 b2{p2.x - (p3.x - p1.x) / 6.0f,
+                p2.y - (p3.y - p1.y) / 6.0f,
+                p2.z - (p3.z - p1.z) / 6.0f};
+        drawBezier(p1, b1, b2, p2);
+    }
+
     // Main implementation (Vec3)
     // NOTE: drawLine uses GL_LINES (1px fixed width, not affected by strokeWeight)
     //       For thick lines or shader support, use StrokeMesh instead

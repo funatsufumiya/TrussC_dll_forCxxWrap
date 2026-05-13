@@ -1056,6 +1056,23 @@ inline void drawArc(float x, float y, float radius, float angleBegin, float angl
     getDefaultContext().drawArc(x, y, radius, angleBegin, angleEnd);
 }
 
+// Bezier — stroke-only. Cubic / quadratic / N-th order via overloading.
+inline void drawBezier(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3) {
+    getDefaultContext().drawBezier(p0, p1, p2, p3);
+}
+inline void drawBezier(Vec3 p0, Vec3 p1, Vec3 p2) {
+    getDefaultContext().drawBezier(p0, p1, p2);
+}
+inline void drawBezier(const std::vector<Vec3>& controlPoints) {
+    getDefaultContext().drawBezier(controlPoints);
+}
+
+// Catmull-Rom curve — stroke-only. p1->p2 is the drawn segment, with
+// p0/p3 acting as tangent influences. Same semantics as oF's drawCurve.
+inline void drawCurve(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3) {
+    getDefaultContext().drawCurve(p0, p1, p2, p3);
+}
+
 // Line
 inline void drawLine(Vec3 p1, Vec3 p2) {
     getDefaultContext().drawLine(p1, p2);
