@@ -22,6 +22,8 @@
 // This file is included from TrussC.h, so required headers
 // are already included: tcMath.h, tcColor.h, tcBitmapFont.h, sokol_gl.h
 
+#include "tc/graphics/tcCurveTessellation.h"
+
 #include <vector>
 #include <string>
 
@@ -153,10 +155,80 @@ public:
     StrokeJoin getStrokeJoin() const { return style_.strokeJoin; }
 
     // -----------------------------------------------------------------------
-    // Circle resolution
+    // Curve quality (circles, arcs, beziers, rounded rects, squircle)
     // -----------------------------------------------------------------------
+    //
+    // Two modes share the same Style.curve field:
+    //
+    //   Tolerance (default): pick segment count adaptively so the chord
+    //     stays within `pixels` of the true curve, in screen space. Set
+    //     once with setCurveTolerance(); zoom & scale() are accounted for
+    //     via getCurrentScale().
+    //
+    //   Resolution: use a fixed segment count regardless of radius. Useful
+    //     for intentionally chunky styling, or to bound vertex cost on
+    //     thousands of small circles.
+    //
+    // setCircleResolution() stays as a deprecated alias forwarding to
+    // setCurveResolution(); existing apps keep building, with a warning
+    // pointing at the new name.
 
-    void setCircleResolution(int res) { circleResolution_ = res; }
+    void setCurveTolerance(float pixels) {
+        style_.curve.mode = CurveStyle::Mode::Tolerance;
+        style_.curve.tolerance = pixels;
+    }
+    void setCurveResolution(int n) {
+        style_.curve.mode = CurveStyle::Mode::Resolution;
+        style_.curve.resolution = n;
+    }
+    float getCurveTolerance() const { return style_.curve.tolerance; }
+    int   getCurveResolution() const { return style_.curve.resolution; }
+    CurveStyle::Mode getCurveMode() const { return style_.curve.mode; }
+
+    // Effective uniform scale derived from the current modelView matrix.
+    // Used by tolerance mode to convert "0.1 px on screen" into the local
+    // tolerance the tessellator should aim for. Camera projection is NOT
+    // considered (deliberate, see CURVE_TOLERANCE_DESIGN_2026-05-14.md §4).
+    float getCurrentScale() const {
+        const auto& m = currentMatrix_.m;
+        // Column 0 / column 1 lengths = effective x / y scale of the basis.
+        float sx = std::sqrt(m[0]*m[0] + m[4]*m[4] + m[8]*m[8]);
+        float sy = std::sqrt(m[1]*m[1] + m[5]*m[5] + m[9]*m[9]);
+        float s = std::max(sx, sy);
+        return s > 0.0f ? s : 1.0f;
+    }
+
+    // Segment-count helpers. Used by drawCircle / drawEllipse / Path::arc /
+    // drawRectRounded / drawArc — single source of truth so a future
+    // tweak to the math (e.g. caching, or a different sagitta formula)
+    // propagates everywhere automatically.
+    int decideCircleSegments(float radius) const {
+        if (style_.curve.mode == CurveStyle::Mode::Resolution) {
+            return std::max(3, style_.curve.resolution);
+        }
+        float effTol = style_.curve.tolerance / getCurrentScale();
+        return segmentsForCircle(radius, effTol);
+    }
+    int decideArcSegments(float radius, float angleSpan) const {
+        if (style_.curve.mode == CurveStyle::Mode::Resolution) {
+            int full = std::max(3, style_.curve.resolution);
+            int n = (int)std::ceil(full * std::abs(angleSpan) / TAU);
+            return std::max(2, n);
+        }
+        float effTol = style_.curve.tolerance / getCurrentScale();
+        return segmentsForArc(radius, angleSpan, effTol);
+    }
+
+    // -----------------------------------------------------------------------
+    // Circle resolution (legacy — kept undeprecated on the context so the
+    // global wrapper in TrussC.h can forward without triggering its own
+    // deprecation warning. The user-facing TrussC.h wrapper IS deprecated.)
+    // -----------------------------------------------------------------------
+    void setCircleResolution(int res) {
+        circleResolution_ = res;          // legacy field, still read by
+                                          // some drawers until C2 migrates them
+        setCurveResolution(res);
+    }
     int getCircleResolution() const { return circleResolution_; }
 
     // -----------------------------------------------------------------------
@@ -574,7 +646,10 @@ private:
         float strokeWeight = 1.0f;
         StrokeCap strokeCap = StrokeCap::Butt;
         StrokeJoin strokeJoin = StrokeJoin::Miter;
-        int circleResolution = 20;
+        int circleResolution = 20;     // legacy, will be removed once all
+                                       // draw* migrate to curve.resolution
+        CurveStyle curve;              // shared by all curved primitives
+                                       // (circle, ellipse, arc, bezier, ...)
         Direction textAlignH = Direction::Left;
         Direction textAlignV = Direction::Top;
         float bitmapLineHeight = bitmapfont::CHAR_TEX_HEIGHT;

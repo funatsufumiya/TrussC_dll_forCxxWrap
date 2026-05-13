@@ -1079,9 +1079,31 @@ inline void drawPoint(float x, float y) {
     getDefaultContext().drawPoint(x, y);
 }
 
-// Set circle resolution
+// -----------------------------------------------------------------------
+// Curve quality — see tcRenderContext.h for the full doc comment.
+// -----------------------------------------------------------------------
+
+inline void setCurveTolerance(float pixels) {
+    getDefaultContext().setCurveTolerance(pixels);
+}
+inline void setCurveResolution(int n) {
+    getDefaultContext().setCurveResolution(n);
+}
+inline float getCurveTolerance() {
+    return getDefaultContext().getCurveTolerance();
+}
+inline int getCurveResolution() {
+    return getDefaultContext().getCurveResolution();
+}
+inline CurveStyle::Mode getCurveMode() {
+    return getDefaultContext().getCurveMode();
+}
+
+// Legacy alias. Forwards to setCurveResolution to avoid double-warning;
+// the deprecation marker fires at the user's call site.
+[[deprecated("Use setCurveResolution(int), or setCurveTolerance(float) for adaptive quality.")]]
 inline void setCircleResolution(int res) {
-    getDefaultContext().setCircleResolution(res);
+    getDefaultContext().setCurveResolution(res);
 }
 
 inline int getCircleResolution() {
