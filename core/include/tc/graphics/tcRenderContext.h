@@ -186,9 +186,12 @@ public:
     CurveStyle::Mode getCurveMode() const { return style_.curve.mode; }
 
     // Effective uniform scale derived from the current modelView matrix.
-    // Used by tolerance mode to convert "0.1 px on screen" into the local
-    // tolerance the tessellator should aim for. Camera projection is NOT
-    // considered (deliberate, see CURVE_TOLERANCE_DESIGN_2026-05-14.md §4).
+    // Used by tolerance mode to convert "0.1 px on screen" (the default)
+    // into the local tolerance the tessellator should aim for. Camera
+    // projection (perspective) is intentionally NOT considered — for
+    // creative-coding use most rendering is 2D or orthographic, and
+    // accounting for perspective would require per-pixel jacobian inversion
+    // at every curve point (overkill).
     float getCurrentScale() const {
         const auto& m = currentMatrix_.m;
         // Column 0 / column 1 lengths = effective x / y scale of the basis.
