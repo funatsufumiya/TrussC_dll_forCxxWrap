@@ -177,6 +177,8 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
            [](const Vec2& a, const Vec2& b){ return a - b; },
            [](const Vec2& a, float b){ return a - b; }
         ),
+        sol::meta_function::unary_minus,
+        [](const Vec2& a){ return -a; },
         sol::meta_function::multiplication,
         sol::overload(
            [](const Vec2& a, const Vec2& b){ return a * b; },
@@ -186,7 +188,8 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
         sol::overload(
            [](const Vec2& a, const Vec2& b){ return a / b; },
            [](const Vec2& a, float b){ return a / b; }
-        )
+        ),
+        sol::meta_function::equal_to, [](const Vec2& a, const Vec2& b){ return a == b; }
     );
     vec2_type["x"] = &Vec2::x;
     vec2_type["y"] = &Vec2::y;
@@ -228,6 +231,8 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
            [](const Vec3& a, const Vec3& b){ return a - b; },
            [](const Vec3& a, float b){ return a - b; }
         ),
+        sol::meta_function::unary_minus,
+        [](const Vec3& a){ return -a; },
         sol::meta_function::multiplication,
         sol::overload(
            [](const Vec3& a, const Vec3& b){ return a * b; },
@@ -237,7 +242,8 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
         sol::overload(
            [](const Vec3& a, const Vec3& b){ return a / b; },
            [](const Vec3& a, float b){ return a / b; }
-        )
+        ),
+        sol::meta_function::equal_to, [](const Vec3& a, const Vec3& b){ return a == b; }
     );
     vec3_type["x"] = &Vec3::x;
     vec3_type["y"] = &Vec3::y;
@@ -273,10 +279,13 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
            [](const Vec4& a, const Vec4& b){ return a - b; },
            [](const Vec4& a, float b){ return a - b; }
         ),
+        sol::meta_function::unary_minus,
+        [](const Vec4& a){ return -a; },
         sol::meta_function::multiplication,
         [](const Vec4& a, float b){ return a * b; },
         sol::meta_function::division,
-        [](const Vec4& a, float b){ return a / b; }
+        [](const Vec4& a, float b){ return a / b; },
+        sol::meta_function::equal_to, [](const Vec4& a, const Vec4& b){ return a == b; }
     );
     vec4_type["x"] = &Vec4::x;
     vec4_type["y"] = &Vec4::y;
@@ -296,10 +305,60 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     vec4_type["lerp"] = &Vec4::lerp;
     vec4_type["xy"] = &Vec4::xy;
 
+    lua->new_usertype<IVec2>("IVec2",
+        sol::constructors<IVec2(), IVec2(int, int)>(),
+        sol::meta_function::addition,
+        sol::overload(
+           [](const IVec2& a, const IVec2& b){ return a + b; },
+           [](const IVec2& a, int b){ return a + b; }
+        ),
+        sol::meta_function::subtraction,
+        sol::overload(
+           [](const IVec2& a, const IVec2& b){ return a - b; },
+           [](const IVec2& a, int b){ return a - b; }
+        ),
+        sol::meta_function::unary_minus,
+        [](const IVec2& a){ return -a; },
+        sol::meta_function::multiplication,
+        sol::overload(
+           [](const IVec2& a, int b){ return a * b; }
+        ),
+        sol::meta_function::equal_to, [](const IVec2& a, const IVec2& b){ return a == b; },
+        "x", &IVec2::x,
+        "y", &IVec2::y,
+        "toVec2", &IVec2::toVec2
+    );
+
+    lua->new_usertype<IVec3>("IVec3",
+        sol::constructors<IVec3(), IVec3(int, int, int)>(),
+        sol::meta_function::addition,
+        sol::overload(
+           [](const IVec3& a, const IVec3& b){ return a + b; },
+           [](const IVec3& a, int b){ return a + b; }
+        ),
+        sol::meta_function::subtraction,
+        sol::overload(
+           [](const IVec3& a, const IVec3& b){ return a - b; },
+           [](const IVec3& a, int b){ return a - b; }
+        ),
+        sol::meta_function::unary_minus,
+        [](const IVec3& a){ return -a; },
+        sol::meta_function::multiplication,
+        sol::overload(
+           [](const IVec3& a, int b){ return a * b; }
+        ),
+        sol::meta_function::equal_to, [](const IVec3& a, const IVec3& b){ return a == b; },
+        "x", &IVec3::x,
+        "y", &IVec3::y,
+        "z", &IVec3::z,
+        "toVec3", &IVec3::toVec3
+    );
+
     sol::usertype<Quaternion> quat_type = lua->new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(), Quaternion(float, float, float, float), Quaternion(const Quaternion&)>(),
         sol::meta_function::multiplication,
-        [](const Quaternion& a, const Quaternion& b){ return a * b; }
+        [](const Quaternion& a, const Quaternion& b){ return a * b; },
+        sol::meta_function::equal_to, [](const Quaternion& a, const Quaternion& b){ return a == b; }
     );
     quat_type["w"] = &Quaternion::w;
     quat_type["x"] = &Quaternion::x;
@@ -358,6 +417,37 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     mat4_type["ortho"] = &Mat4::ortho;
     mat4_type["perspective"] = &Mat4::perspective;
     mat4_type["frustum"] = &Mat4::frustum;
+
+    sol::usertype<Mat3> mat3_type = lua->new_usertype<Mat3>("Mat3",
+        sol::constructors<Mat3(),
+            Mat3(float m00, float m01, float m02,
+                 float m10, float m11, float m12,
+                 float m20, float m21, float m22),
+            Mat3(const Mat3&)>(),
+        sol::meta_function::multiplication,
+        sol::overload(
+           [](const Mat3& a, const Mat3& b){ return a * b; },
+           [](const Mat3& a, const Vec2& b){ return a * b; },
+           [](const Mat3& a, const Vec3& b){ return a * b; }
+        )
+    );
+    mat3_type["at"] = [](Mat3& m, int raw, int col) { return m.at(raw, col); };
+    mat3_type["set"] = [](Mat3& m, int raw, int col, int v){ m.at(raw, col) = v; }; // WORKAROUND
+    mat3_type["identity"] = &Mat3::identity;
+    mat3_type["getHomography"] = &Mat3::getHomography;
+    mat3_type["determinant"] = &Mat3::determinant;
+    mat3_type["translate"] = sol::overload(
+        [](Mat3& m, float tx, float ty){ return m.translate(tx, ty); },
+        [](Mat3& m, const Vec2& t){ return m.translate(t); }
+    );
+    mat3_type["rotate"] = &Mat3::rotate;
+    mat3_type["scale"] = sol::overload(
+        [](Mat3& m, float s){ return m.scale(s); },
+        [](Mat3& m, float sx, float sy){ return m.scale(sx, sy); },
+        [](Mat3& m, const Vec2& s){ return m.scale(s); }
+    );
+    mat3_type["transposed"] = &Mat3::transposed;
+    mat3_type["inverted"] = &Mat3::inverted;
     
     sol::usertype<Color> color_type = lua->new_usertype<Color>("Color",
         sol::constructors<Color(), Color(float), Color(float, float), Color(float, float, float), Color(float, float, float, float), Color(const Color&)>(),
