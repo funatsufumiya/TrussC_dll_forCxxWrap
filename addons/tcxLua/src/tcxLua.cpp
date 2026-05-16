@@ -1259,7 +1259,33 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
 
     sol::usertype<Font> font_t = lua->new_usertype<Font>("Font",
         sol::constructors<Font(), Font(const Font&), Font(Font&&)>(),
-        "load", &Font::load
+        "load", &Font::load,
+        "isLoaded", &Font::isLoaded,
+        "setAlign", sol::overload(
+            [](Font& f, Direction a, Direction b){ return f.setAlign(a,b); },
+            [](Font& f, Direction a){ return f.setAlign(a); }
+        ),
+        "getAlignH", &Font::getAlignH,
+        "getAlignV", &Font::getAlignV,
+        "drawString", sol::overload(
+            [](Font& f, const std::string& s, float x, float y){
+                f.drawString(s, x, y);
+            },
+            [](Font& f, const std::string& s, float x, float y, Direction a, Direction b){
+                f.drawString(s, x, y, a, b);
+            }
+        ),
+        "setLineHeight", &Font::setLineHeight,
+        "setLineHeightEm", &Font::setLineHeightEm,
+        "getLineHeight", &Font::getLineHeight,
+        "getDefaultLineHeight", &Font::getDefaultLineHeight,
+        "resetLineHeight", &Font::resetLineHeight,
+        "getWidth", &Font::getWidth,
+        "getHeight", &Font::getHeight,
+        "getBBox", &Font::getBBox,
+        "getAscent", &Font::getAscent,
+        "getDescent", &Font::getDescent,
+        "getSize", &Font::getSize
     );
 
     sol::usertype<Rect> rect_t = lua->new_usertype<Rect>("Rect",
