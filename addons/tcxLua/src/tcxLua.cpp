@@ -14,6 +14,12 @@ using namespace tc;
 
 // namespace tcx::lua {
 
+namespace sol
+{
+    template <>
+    struct is_automagical<std::filesystem::path> : std::false_type {};
+}
+
 bool tcxLua::canUseLuaJITFromSol2(){
     #ifdef TCXLUA_USE_LUAJIT
     return true;
@@ -81,6 +87,17 @@ void tcxLua::setBindings(const std::shared_ptr<sol::state>& lua){
     setMathBindings(lua);
 
     lua->set_function("getElapsedTimef", &trussc::getElapsedTimef);
+    lua->set_function("getDataPath", &trussc::getDataPath);
+    lua->set_function("toPath", [](const std::string& s){
+        std::filesystem::path p(s);
+        return s;
+    });
+    lua->set_function("fromPath", [](const std::filesystem::path& p){
+        return p.string();
+    });
+    lua->set_function("pathToString", [](const std::filesystem::path& p){
+        return p.string();
+    });
 }
 
 void tcxLua::setConstBindings(const std::shared_ptr<sol::state>& lua){
@@ -448,6 +465,30 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     );
     mat3_type["transposed"] = &Mat3::transposed;
     mat3_type["inverted"] = &Mat3::inverted;
+
+    // FIXME: this makes compilation error
+    // using StdPath = std::filesystem::path;
+    // lua->new_usertype<StdPath>("StdPath",
+    //     sol::constructors<StdPath(), StdPath(const std::string&)>(),
+    //     sol::meta_function::division,
+    //     sol::overload(
+    //         [](StdPath& a, const StdPath& b){ return a / b; },
+    //         [](StdPath& a, const std::string& b){ return a / b; }
+    //     ),
+    //     "c_str", [](StdPath& p){ return p.c_str(); },
+    //     "string", [](StdPath& p){ return p.string(); },
+    //     "exists", [](StdPath& p){ return std::filesystem::exists(p); },
+    //     "is_directory", [](StdPath& p){ return std::filesystem::is_directory(p); },
+    //     "is_dir", [](StdPath& p){ return std::filesystem::is_directory(p); },
+    //     "is_file", [](StdPath& p){ return std::filesystem::is_regular_file(p); },
+    //     "is_regular_file", [](StdPath& p){ return std::filesystem::is_regular_file(p); },
+    //     "is_empty", [](StdPath& p){ return std::filesystem::is_empty(p); },
+    //     "absolute", [](StdPath& p){ return std::filesystem::absolute(p); },
+    //     "relative", sol::overload(
+    //         [](StdPath& p){ return std::filesystem::relative(p); },
+    //         [](StdPath& p, const StdPath& b){ return std::filesystem::relative(p, b); }
+    //     )
+    // );
     
     sol::usertype<Color> color_type = lua->new_usertype<Color>("Color",
         sol::constructors<Color(), Color(float), Color(float, float), Color(float, float, float), Color(float, float, float, float), Color(const Color&)>(),
@@ -605,7 +646,14 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     fbo_type["isAllocated"] = &Fbo::isAllocated;
     fbo_type["isActive"] = &Fbo::isActive;
     fbo_type["getTexture"] = [](Fbo& f) -> Texture& { return f.getTexture(); };
-    fbo_type["save"] = &Fbo::save;
+    fbo_type["save"] = sol::overload(
+        &Fbo::save,
+        [](Fbo& t, const std::string& s){ return t.save(s); }
+    );
+    fbo_type["draw"] = sol::overload(
+        [](Fbo& t, float x, float y){ return t.draw(x, y); },
+        [](Fbo& t, float x, float y, float w, float h){ return t.draw(x, y, w, h); }
+    );
     fbo_type["getColorImage"] = &Fbo::getColorImage;
     fbo_type["getTextureView"] = &Fbo::getTextureView;
     fbo_type["getSampler"] = &Fbo::getSampler;
@@ -691,14 +739,24 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     sol::usertype<Image> img_type = lua->new_usertype<Image>("Image",
         sol::constructors<Image()>() // FIXME: move constructor?
     );
-    img_type["load"] = &Image::load;
+    img_type["load"] = sol::overload(
+        &Image::load,
+        [](Image& t, const std::string& s){ return t.load(s); }
+    );
+    img_type["save"] = sol::overload(
+        &Image::save,
+        [](Image& t, const std::string& s){ return t.save(s); }
+    );
     img_type["loadFromMemory"] = &Image::loadFromMemory;
-    img_type["save"] = &Image::save;
     img_type["allocate"] = sol::overload(
         [](Image& t, int w, int h){ return t.allocate(w, h); },
         [](Image& t, int w, int h, int c){ return t.allocate(w, h, c); }
     );
     img_type["clear"] = &Image::clear;
+    img_type["draw"] = sol::overload(
+        [](Image& t, float x, float y){ return t.draw(x, y); },
+        [](Image& t, float x, float y, float w, float h){ return t.draw(x, y, w, h); }
+    );
     img_type["isAllocated"] = &Image::isAllocated;
     img_type["getWidth"] = &Image::getWidth;
     img_type["getHeight"] = &Image::getHeight;
@@ -736,11 +794,17 @@ void tcxLua::setTypeBindings(const std::shared_ptr<sol::state>& lua){
     pix_type["setFromFloats"] = &Pixels::setFromFloats;
     pix_type["copyTo"] = &Pixels::copyTo;
     pix_type["clone"] = &Pixels::clone;
-    pix_type["load"] = &Pixels::load;
     pix_type["loadHDR"] = &Pixels::loadHDR;
     pix_type["loadPlatform"] = &Pixels::loadPlatform;
     pix_type["loadFromMemory"] = &Pixels::loadFromMemory;
-    pix_type["save"] = &Pixels::save;
+    pix_type["load"] = sol::overload(
+        &Pixels::load,
+        [](Pixels& t, const std::string& s){ return t.load(s); }
+    );
+    pix_type["save"] = sol::overload(
+        &Pixels::save,
+        [](Pixels& t, const std::string& s){ return t.save(s); }
+    );
 
     sol::usertype<PixelFormat> pix_format_type = lua->new_usertype<PixelFormat>("PixelFormat",
         sol::meta_function::equal_to, [](PixelFormat a, PixelFormat b){ return a == b; }
