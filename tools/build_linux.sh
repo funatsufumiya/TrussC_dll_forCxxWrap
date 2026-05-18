@@ -82,6 +82,12 @@ cp -f "$SO_SRC" "$SOURCE_DIR/bin/"
 echo "  [Copy SO] $SO_SRC -> $SCRIPT_DIR/"
 cp -f "$SO_SRC" "$SCRIPT_DIR/"
 
+DYLIB_SRC="$SOURCE_DIR/build/addons/tcxImGui/libtcxImGui.so"
+echo "  [Copy dylib] $DYLIB_SRC -> $SOURCE_DIR/bin/"
+cp -f "$DYLIB_SRC" "$SOURCE_DIR/bin/"
+echo "  [Copy dylib] $DYLIB_SRC -> $SCRIPT_DIR/"
+cp -f "$DYLIB_SRC" "$SCRIPT_DIR/"
+
 # Install desktop entry and icon (XDG user-level, no root required)
 # Skip if already installed
 if [ -f "$HOME/.local/share/applications/trusscli.desktop" ]; then

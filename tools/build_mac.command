@@ -67,6 +67,12 @@ cp -f "$DYLIB_SRC" "$SOURCE_DIR/bin/"
 echo "  [Copy dylib] $DYLIB_SRC -> $SCRIPT_DIR/"
 cp -f "$DYLIB_SRC" "$SCRIPT_DIR/"
 
+DYLIB_SRC="$SOURCE_DIR/build/addons/tcxImGui/libtcxImGui.dylib"
+echo "  [Copy dylib] $DYLIB_SRC -> $SOURCE_DIR/bin/"
+cp -f "$DYLIB_SRC" "$SOURCE_DIR/bin/"
+echo "  [Copy dylib] $DYLIB_SRC -> $SCRIPT_DIR/"
+cp -f "$DYLIB_SRC" "$SCRIPT_DIR/"
+
 # Install symlink to /usr/local/bin so trusscli is on PATH
 # Skip only if it already points to THIS binary
 BIN_TARGET="$SOURCE_DIR/bin/trusscli.app/Contents/MacOS/trusscli"

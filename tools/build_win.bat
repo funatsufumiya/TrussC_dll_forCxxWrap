@@ -72,6 +72,12 @@ copy /Y "%DLL_SRC%" "%SOURCE_DIR%\bin\TrussC.dll"
 echo   [Copy DLL] "%DLL_SRC%" -^> "%SCRIPT_DIR%\TrussC.dll"
 copy /Y "%DLL_SRC%" "%SCRIPT_DIR%\TrussC.dll"
 
+set "DLL_SRC=%SOURCE_DIR%\build\addons\tcxImGui\Release\tcxImGui.dll"
+echo   [Copy DLL] "%DLL_SRC%" -^> "%SOURCE_DIR%\bin\tcxImGui.dll"
+copy /Y "%DLL_SRC%" "%SOURCE_DIR%\bin\tcxImGui.dll"
+echo   [Copy DLL] "%DLL_SRC%" -^> "%SCRIPT_DIR%\tcxImGui.dll"
+copy /Y "%DLL_SRC%" "%SCRIPT_DIR%\tcxImGui.dll
+
 echo.
 echo ==========================================
 echo   Build completed successfully!
