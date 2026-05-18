@@ -73,6 +73,8 @@ add_library(${ADDON_NAME} SHARED
     ${HAP_HEADERS}
 )
 
+set_target_properties(${ADDON_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 target_include_directories(${ADDON_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${hap_source_SOURCE_DIR}/source

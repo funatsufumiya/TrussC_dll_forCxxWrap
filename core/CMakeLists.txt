@@ -117,6 +117,7 @@ set(TC_ALL_SOURCES
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TC_ALL_SOURCES})
 
 add_library(TrussC SHARED ${TC_ALL_SOURCES})
+set_target_properties(${ADDON_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library(tc::TrussC ALIAS TrussC)
 

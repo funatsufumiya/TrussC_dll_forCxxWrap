@@ -46,6 +46,8 @@ add_library(${ADDON_NAME} SHARED
     ${BINGEN_GENERATED_SOURCES}
 )
 
+set_target_properties(${ADDON_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 if(USE_LUAJIT)
     target_compile_definitions(${ADDON_NAME} PRIVATE TCXLUA_USE_LUAJIT=1 SOL_LUAJIT=1)
     target_include_directories(${ADDON_NAME} PUBLIC

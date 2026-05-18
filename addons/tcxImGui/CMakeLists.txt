@@ -23,6 +23,7 @@ file(GLOB TCX_IMGUI_HEADERS
 )
 
 add_library(tcxImGui SHARED ${TCX_IMGUI_IMPL} ${TCX_IMGUI_HEADERS})
+set_target_properties(${ADDON_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 target_include_directories(tcxImGui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(tcxImGui PUBLIC TrussC)
 
