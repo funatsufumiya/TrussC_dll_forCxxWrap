@@ -56,7 +56,7 @@ configure_file(
 file(GLOB ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB ADDON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
-add_library(${ADDON_NAME} STATIC ${ADDON_SOURCES} ${ADDON_HEADERS} ${_GEN_CPP})
+add_library(${ADDON_NAME} SHARED ${ADDON_SOURCES} ${ADDON_HEADERS} ${_GEN_CPP})
 add_library(tc::tcxTls ALIAS ${ADDON_NAME})
 
 target_include_directories(${ADDON_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

@@ -65,7 +65,7 @@ endif()
 # -----------------------------------------------------------------------------
 # Build addon library
 # -----------------------------------------------------------------------------
-add_library(${ADDON_NAME} STATIC
+add_library(${ADDON_NAME} SHARED
     ${ADDON_SOURCES}
     ${ADDON_HEADERS}
     ${PLATFORM_SOURCES}

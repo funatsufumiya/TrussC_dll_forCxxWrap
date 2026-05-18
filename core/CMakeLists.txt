@@ -70,7 +70,7 @@ elseif(UNIX)
 endif()
 
 # =============================================================================
-# ライブラリ定義 (STATIC)
+# ライブラリ定義
 # =============================================================================
 # 全てのヘッダーファイル（IDE でディレクトリ構造を表示するため）
 file(GLOB_RECURSE TC_HEADERS
@@ -116,7 +116,7 @@ set(TC_ALL_SOURCES
 # Xcode / Visual Studio でディレクトリ構造を維持
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TC_ALL_SOURCES})
 
-add_library(TrussC STATIC ${TC_ALL_SOURCES})
+add_library(TrussC SHARED ${TC_ALL_SOURCES})
 
 add_library(tc::TrussC ALIAS TrussC)
 

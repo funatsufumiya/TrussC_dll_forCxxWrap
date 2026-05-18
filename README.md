@@ -1,3 +1,9 @@
+# TrussC_dll_forCxxWrap
+
+This version of TrussC is forked for generating dlls for [CxxWrap.jl](https://github.com/JuliaInterop/CxxWrap.jl)
+
+------
+
 # TrussC
 
 [![Build](https://github.com/TrussC-org/TrussC/actions/workflows/build.yml/badge.svg)](https://github.com/TrussC-org/TrussC/actions/workflows/build.yml)
