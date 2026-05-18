@@ -2,9 +2,6 @@
 
 This version of TrussC is forked for generating dlls for [CxxWrap.jl](https://github.com/JuliaInterop/CxxWrap.jl)
 
-> [!Warning]
-> This repository is **STOPPED** further development now. See [TrussC.jl/issues/3](https://github.com/funatsufumiya/TrussC.jl/issues/3) in detail.
-
 ------
 
 # TrussC
