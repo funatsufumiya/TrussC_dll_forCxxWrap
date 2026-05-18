@@ -65,6 +65,14 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
+echo Copying TrussC.dll dependencies...
+set "DLL_SRC=%SOURCE_DIR%\..\core\build-windows\Release\TrussC.dll"
+echo   [Copy DLL] "%DLL_SRC%" -^> "%SOURCE_DIR%\bin\TrussC.dll"
+copy /Y "%DLL_SRC%" "%SOURCE_DIR%\bin\TrussC.dll"
+echo   [Copy DLL] "%DLL_SRC%" -^> "%SCRIPT_DIR%\TrussC.dll"
+copy /Y "%DLL_SRC%" "%SCRIPT_DIR%\TrussC.dll"
+
+echo.
 echo ==========================================
 echo   Build completed successfully!
 echo ==========================================

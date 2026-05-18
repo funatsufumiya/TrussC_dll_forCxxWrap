@@ -74,6 +74,14 @@ echo "Creating symlink to distribution folder..."
 rm -f "$SCRIPT_DIR/trusscli"
 ln -s "$SOURCE_DIR/bin/trusscli" "$SCRIPT_DIR/trusscli"
 
+echo ""
+echo "Copying libTrussC.so dependencies..."
+SO_SRC="$SOURCE_DIR/../core/build-linux/libTrussC.so"
+echo "  [Copy SO] $SO_SRC -> $SOURCE_DIR/bin/"
+cp -f "$SO_SRC" "$SOURCE_DIR/bin/"
+echo "  [Copy SO] $SO_SRC -> $SCRIPT_DIR/"
+cp -f "$SO_SRC" "$SCRIPT_DIR/"
+
 # Install desktop entry and icon (XDG user-level, no root required)
 # Skip if already installed
 if [ -f "$HOME/.local/share/applications/trusscli.desktop" ]; then

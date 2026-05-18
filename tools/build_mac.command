@@ -59,6 +59,14 @@ echo "Creating symlink to distribution folder..."
 rm -rf "$SCRIPT_DIR/trusscli.app"
 ln -s "$SOURCE_DIR/bin/trusscli.app" "$SCRIPT_DIR/trusscli.app"
 
+echo ""
+echo "Copying libTrussC.dylib dependencies..."
+DYLIB_SRC="$SOURCE_DIR/../core/build-macos/libTrussC.dylib"
+echo "  [Copy dylib] $DYLIB_SRC -> $SOURCE_DIR/bin/"
+cp -f "$DYLIB_SRC" "$SOURCE_DIR/bin/"
+echo "  [Copy dylib] $DYLIB_SRC -> $SCRIPT_DIR/"
+cp -f "$DYLIB_SRC" "$SCRIPT_DIR/"
+
 # Install symlink to /usr/local/bin so trusscli is on PATH
 # Skip only if it already points to THIS binary
 BIN_TARGET="$SOURCE_DIR/bin/trusscli.app/Contents/MacOS/trusscli"
