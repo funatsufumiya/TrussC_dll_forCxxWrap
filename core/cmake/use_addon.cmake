@@ -104,6 +104,7 @@ macro(_tc_auto_addon ADDON_NAME ADDON_PATH)
     # ソースがない場合はヘッダオンリーライブラリとして作成
     if(_ADDON_SOURCES)
         add_library(${ADDON_NAME} SHARED ${_ADDON_SOURCES})
+        set_target_properties(${ADDON_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     else()
         # add_library(${ADDON_NAME} INTERFACE)
         message(FATAL "Header only library is not usable for TrussC_dll_forCxxWrap. Please consider to add some cpp file.")
